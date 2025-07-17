@@ -1,0 +1,31 @@
+participant Cliente
+participant API as NestJS_API
+participant Auth as AuthService
+participant Users as UsersService
+participant DB as PostgreSQL
+
+%% Registro
+Cliente->>API: POST /auth/register {email, password}
+API->>Auth: register(email, password)
+Auth->>Users: create(email, hashedPassword)
+Users->>DB: INSERT INTO "user"
+DB-->>Users: OK
+Users-->>Auth: Usuario creado
+Auth-->>API: {id, email}
+API-->>Cliente: 201 Created
+
+%% Login
+Cliente->>API: POST /auth/login {email, password}
+API->>Auth: login(email, password)
+Auth->>Users: findByEmail(email)
+Users->>DB: SELECT * FROM "user" WHERE email=…
+DB-->>Users: Usuario row
+Users-->>Auth: Usuario
+Auth->>Auth: bcrypt.compare(password, hash)
+alt contraseña válida
+    Auth-->>API: { access_token }
+    API-->>Cliente: 200 OK { access_token }
+else
+    Auth-->>API: UnauthorizedException
+    API-->>Cliente: 401 Unauthorized
+end

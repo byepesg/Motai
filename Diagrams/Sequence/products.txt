@@ -1,0 +1,59 @@
+%% Products Module CRUD Sequence
+
+participant Cliente
+participant Guard as JwtAuthGuard
+participant API as ProductsController
+participant Service as ProductsService
+participant DB as PostgreSQL
+
+%% Crear Producto
+Cliente->>API: POST /products { name, description, price }
+API->>Guard: validate JWT
+Guard-->>API: token válido
+API->>Service: create({ name, description, price })
+Service->>DB: INSERT INTO product (...)
+DB-->>Service: new Product row
+Service-->>API: Product creado
+API-->>Cliente: 201 Created { id, name, description, price }
+
+%% Listar Productos
+Cliente->>API: GET /products
+API->>Guard: validate JWT
+Guard-->>API: token válido
+API->>Service: findAll()
+Service->>DB: SELECT * FROM product
+DB-->>Service: [ Product[], … ]
+Service-->>API: lista de Products
+API-->>Cliente: 200 OK [ Products ]
+
+%% Obtener Producto por ID
+Cliente->>API: GET /products/:id
+API->>Guard: validate JWT
+Guard-->>API: token válido
+API->>Service: findOne(id)
+Service->>DB: SELECT * FROM product WHERE id = id
+DB-->>Service: Product row
+Service-->>API: Product
+API-->>Cliente: 200 OK { Product }
+
+%% Actualizar Producto
+Cliente->>API: PATCH /products/:id { name?, description?, price? }
+API->>Guard: validate JWT
+Guard-->>API: token válido
+API->>Service: update(id, data)
+Service->>DB: UPDATE product SET ... WHERE id = id
+DB-->>Service: UPDATE OK
+Service->>DB: SELECT * FROM product WHERE id = id
+DB-->>Service: updated Product row
+Service-->>API: Product actualizado
+API-->>Cliente: 200 OK { Product }
+
+%% Eliminar Producto
+Cliente->>API: DELETE /products/:id
+API->>Guard: validate JWT
+Guard-->>API: token válido
+API->>Service: delete(id)
+Service->>DB: DELETE FROM product WHERE id = id
+DB-->>Service: DELETE OK
+Service-->>API: resultado eliminación
+API-->>Cliente: 204 No Content
